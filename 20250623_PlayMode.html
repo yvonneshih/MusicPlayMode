@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Music Play Mode</title>
+    <style>
+        body {
+            margin: 0;
+            background: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .lang-select {
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 1em;
+            margin: 24px 0 10px 0;
+        }
+        h1 { margin: 0 0 18px 0; }
+        #musicCanvas {
+            background: #111;
+            border-radius: 10px;
+            box-shadow: 0 4px 24px #0005;
+            margin-bottom: 18px;
+            display: block;
+        }
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .key-label {
+            background: #333;
+            color: #fff;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 1.1em;
+            min-width: 36px;
+            text-align: center;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        .key-label.active {
+            background: #ffe066;
+            color: #222;
+        }
+        .tip { color: #aaa; margin: 10px 0 0 0; text-align: center; }
+        .intro {
+            margin: 18px 0 0 0;
+            color: #ffe066;
+            font-size: 1.05em;
+            text-align: left;
+            line-height: 1.7;
+            max-width: 420px;
+        }
+        .instrument-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .instrument-select {
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <select class="lang-select" id="langSelect">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ko">한국어</option>
+            <option value="no">Norsk</option>
+        </select>
+        <select class="lang-select mode-select">
+            <option value="custom">Custom Mode</option>
+            <option value="follow">Following Mode</option>
+        </select>
+    </div>
+    <h1 id="mainTitle">Pixel Music Play Mode</h1>
+    <canvas id="musicCanvas" width="320" height="320"></canvas>
+    <div class="keyboard-row" id="keyboardRow"></div>
+    <div class="instrument-row">
+        <label id="instrumentLabel">Instrument</label>
+        <select id="instrumentSelect" class="instrument-select">
+            <option value="piano">Piano</option>
+            <option value="guitar">Guitar</option>
+            <option value="flute">Flute</option>
+            <option value="cello">Cello</option>
+        </select>
+    </div>
+    <div class="tip" id="tip">Press keys (A S D F G H J) to play do re mi fa so la si</div>
+    <div class="intro" id="intro"></div>
+    <div class="song-title-row">
+        <div class="song-title">Twinkle Twinkle Little Star</div>
+        <button class="follow-start-btn">Start</button>
+        <button class="follow-replay-btn">Replay</button>
+    </div>
+    <script>
+    const LANGS = {
+        en: {
+            title: "Pixel Music Play Mode",
+            tip: "Press keys (A S D F G H J) to play do re mi fa so la si",
+            instrument: "Instrument",
+            instruments: ["Piano", "Guitar", "Flute", "Cello"],
+            intro: `<b>How to play:</b><br>
+- Press <b>A S D F G H J</b> to play do re mi fa so la si.<br>
+- Hold <b>Down Arrow</b> + key for lower octave.<br>
+- Hold <b>Space</b> + key for higher octave.<br>
+- Multiple keys = chord.<br>
+- <b>Long press</b> a key to make the vertical bar higher.<br>
+- You can change the instrument below.`,
+            notes: ["do", "re", "mi", "fa", "so", "la", "si"],
+            keys: ["A", "S", "D", "F", "G", "H", "J"]
+        },
+        zh: {
+            title: "像素音乐演奏模式",
+            tip: "按下键盘 (A S D F G H J) 演奏哆来咪发嗦拉西",
+            instrument: "乐器",
+            instruments: ["钢琴", "吉他", "长笛", "大提琴"],
+            intro: `<b>玩法说明：</b><br>
+- 按 <b>A S D F G H J</b> 演奏哆来咪发嗦拉西。<br>
+- 按住 <b>↓方向键</b> + 音符键为低八度。<br>
+- 按住 <b>空格</b> + 音符键为高八度。<br>
+- 可多键同时按下弹和弦。<br>
+- <b>长按</b>某键，竖条会逐步升高。<br>
+- 可在下方切换乐器。`,
+            notes: ["哆", "来", "咪", "发", "嗦", "拉", "西"],
+            keys: ["A", "S", "D", "F", "G", "H", "J"]
+        },
+        ko: {
+            title: "픽셀 음악 연주 모드",
+            tip: "A S D F G H J 키로 도레미파솔라시를 연주하세요",
+            instrument: "악기",
+            instruments: ["피아노", "기타", "플루트", "첼로"],
+            intro: `<b>플레이 방법:</b><br>
+- <b>A S D F G H J</b> 키로 도레미파솔라시를 연주하세요.<br>
+- <b>아래 화살표</b> + 키: 저음 옥타브.<br>
+- <b>스페이스바</b> + 키: 고음 옥타브.<br>
+- 여러 키를 동시에 누르면 코드 연주 가능.<br>
+- <b>길게 누르면</b> 해당 열이 점점 더 높아집니다.<br>
+- 아래에서 악기를 바꿀 수 있습니다.`,
+            notes: ["도", "레", "미", "파", "솔", "라", "시"],
+            keys: ["A", "S", "D", "F", "G", "H", "J"]
+        },
+        no: {
+            title: "Piksel Musikkspill-modus",
+            tip: "Trykk på tastene (A S D F G H J) for å spille do re mi fa so la si",
+            instrument: "Instrument",
+            instruments: ["Piano", "Gitar", "Fløyte", "Cello"],
+            intro: `<b>Slik spiller du:</b><br>
+- Trykk <b>A S D F G H J</b> for å spille do re mi fa so la si.<br>
+- Hold <b>pil ned</b> + tast for lavere oktav.<br>
+- Hold <b>mellomrom</b> + tast for høyere oktav.<br>
+- Flere taster = akkord.<br>
+- <b>Hold inne</b> en tast for å gjøre søylen høyere.<br>
+- Du kan bytte instrument nedenfor.`,
+            notes: ["do", "re", "mi", "fa", "so", "la", "si"],
+            keys: ["A", "S", "D", "F", "G", "H", "J"]
+        }
+    };
+    const NOTE_FREQS = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88]; // C D E F G A B
+    const gridSize = 8;
+    const canvas = document.getElementById('musicCanvas');
+    const ctx = canvas.getContext('2d');
+    const langSelect = document.getElementById('langSelect');
+    const mainTitle = document.getElementById('mainTitle');
+    const tipEl = document.getElementById('tip');
+    const keyboardRow = document.getElementById('keyboardRow');
+    const instrumentLabel = document.getElementById('instrumentLabel');
+    const instrumentSelect = document.getElementById('instrumentSelect');
+    const intro = document.getElementById('intro');
+    const modeSelect = document.querySelector('.mode-select');
+    // 移除所有多余的.song-title，只保留一个
+    [...document.querySelectorAll('.song-title')].forEach(el => el.remove());
+    // 创建唯一的songTitleRow
+    const songTitleRow = document.createElement('div');
+    songTitleRow.style.display = 'flex';
+    songTitleRow.style.alignItems = 'center';
+    songTitleRow.style.justifyContent = 'center';
+    songTitleRow.style.gap = '14px';
+    songTitleRow.style.margin = '10px 0 0 0';
+    const songTitle = document.createElement('div');
+    songTitle.className = 'song-title';
+    songTitle.style.fontWeight = 'bold';
+    songTitle.style.fontSize = '1.15em';
+    songTitle.style.margin = '0';
+    songTitle.style.display = 'none';
+    songTitleRow.appendChild(songTitle);
+    let currentLang = 'en';
+    let pressed = {};
+    let audioCtx, oscillators = {};
+    // 7音阶映射到8列（最后一列为和弦/高音/留白）
+    const keyToCol = { 'A':0, 'S':1, 'D':2, 'F':3, 'G':4, 'H':5, 'J':6 };
+    // 动态主色：低八度蓝色，中八度青色，高八度橙色
+    const octaveColors = [
+        [30,80,220],   // 低八度 蓝
+        [0,200,180],   // 中八度 青
+        [255,140,0]    // 高八度 橙
+    ];
+    let barColors = Array(7).fill(0).map(()=>[0,200,180]); // 初始为中八度色
+    let barTargetColors = Array(7).fill(0).map(()=>[0,200,180]);
+    let barOctave = Array(7).fill(1); // 0:低 1:中 2:高
+    // 跟随模式相关变量，提前声明
+    let followMode = false;
+    let followStep = 0;
+    let followActive = false;
+    let followWaiting = false;
+    let followFade = 0;
+    let followFadeIdx = -1;
+    const followStartBtn = document.querySelector('.follow-start-btn');
+    const followReplayBtn = document.querySelector('.follow-replay-btn');
+    function setLangUI(lang) {
+        const L = LANGS[lang];
+        mainTitle.textContent = L.title;
+        tipEl.textContent = L.tip;
+        keyboardRow.innerHTML = '';
+        for (let i = 0; i < 7; i++) {
+            const div = document.createElement('div');
+            div.className = 'key-label';
+            div.id = 'keyLabel_' + i;
+            div.textContent = `${L.keys[i]}\n${L.notes[i]}`;
+            div.style.whiteSpace = 'pre';
+            // 虚拟按键事件
+            div.addEventListener('mousedown', () => {
+                triggerVirtualKey(i, false, false);
+            });
+            div.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                triggerVirtualKey(i, false, false);
+            }, {passive:false});
+            div.addEventListener('mouseup', () => {
+                releaseVirtualKey(i);
+            });
+            div.addEventListener('mouseleave', () => {
+                releaseVirtualKey(i);
+            });
+            div.addEventListener('touchend', () => {
+                releaseVirtualKey(i);
+            });
+            keyboardRow.appendChild(div);
+        }
+        instrumentLabel.textContent = L.instrument;
+        for (let i = 0; i < instrumentSelect.options.length; i++) {
+            instrumentSelect.options[i].textContent = L.instruments[i];
+        }
+        intro.innerHTML = L.intro;
+    }
+    langSelect.addEventListener('change', e => {
+        currentLang = e.target.value;
+        setLangUI(currentLang);
+    });
+    setLangUI('en');
+    // 画布状态
+    let grid = Array(gridSize).fill(0).map(()=>Array(gridSize).fill(null));
+    let holdTimes = Array(7).fill(0); // 每个音符键的长按帧数
+    const keyOrder = ['A','S','D','F','G','H','J'];
+    function lerpColorRGB(c1, c2, t) {
+        return [
+            Math.round(c1[0] + (c2[0]-c1[0])*t),
+            Math.round(c1[1] + (c2[1]-c1[1])*t),
+            Math.round(c1[2] + (c2[2]-c1[2])*t)
+        ];
+    }
+    function lerpBarColors() {
+        for(let i=0;i<7;i++){
+            for(let j=0;j<3;j++){
+                barColors[i][j] += (barTargetColors[i][j]-barColors[i][j])*0.18;
+            }
+        }
+    }
+    function lerpDynamicToWhite(i, t) {
+        // i: 音符索引, t: 0~1, 0为主色，1为白色
+        const c = lerpColorRGB(barColors[i], [255,255,255], t);
+        return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+    function drawGrid() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                if (followMode && followWaiting) {
+                    // 跟随模式下直接渲染grid
+                    ctx.fillStyle = grid[x][y] || '#222';
+                } else {
+                    // 自定义模式下渲染动态竖条
+                    let h = 0;
+                    if (x < 7 && holdTimes[x] > 0) {
+                        h = Math.min(gridSize, 1 + Math.floor(holdTimes[x]/6));
+                    }
+                    if (x < 7 && y >= gridSize-h && holdTimes[x] > 0) {
+                        const t = (y - (gridSize-h)) / Math.max(1,h-1);
+                        ctx.fillStyle = lerpDynamicToWhite(x, t);
+                    } else {
+                        ctx.fillStyle = grid[x][y] || '#222';
+                    }
+                }
+                ctx.fillRect(x*40+4, y*40+4, 32, 32);
+            }
+        }
+    }
+    function animate() {
+        if (!(followMode && followWaiting)) {
+            for (let i = 0; i < 7; i++) {
+                if (pressed[keyOrder[i]]) holdTimes[i]++;
+                else holdTimes[i] = 0;
+            }
+            lerpBarColors();
+        }
+        drawGrid();
+        requestAnimationFrame(animate);
+    }
+    animate();
+    // 音频播放
+    function playNote(idx, octave=0) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (oscillators[idx+octave*10]) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        let freq = NOTE_FREQS[idx];
+        if (octave === -1) freq /= 2;
+        if (octave === 1) freq *= 2;
+        osc.frequency.value = freq;
+        // 乐器音色
+        let type = 'sine', attack = 0.01, decay = 0.12;
+        switch (instrumentSelect.value) {
+            case 'piano': type = 'sine'; attack = 0.01; decay = 0.12; break;
+            case 'guitar': type = 'triangle'; attack = 0.01; decay = 0.18; break;
+            case 'flute': type = 'sine'; attack = 0.08; decay = 0.22; break;
+            case 'cello': type = 'sawtooth'; attack = 0.12; decay = 0.32; break;
+        }
+        osc.type = type;
+        gain.gain.value = 0.0;
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
+        oscillators[idx+octave*10] = {osc, gain, decay};
+        // 设置目标主色
+        let octaveIdx = octave+1; // -1:低 0:中 1:高 -> 0,1,2
+        if(octaveIdx<0) octaveIdx=0;
+        if(octaveIdx>2) octaveIdx=2;
+        barTargetColors[idx] = octaveColors[octaveIdx].slice();
+        barOctave[idx] = octaveIdx;
+    }
+    function stopNote(idx, octave=0) {
+        if (oscillators[idx+octave*10]) {
+            const {gain, osc, decay} = oscillators[idx+octave*10];
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + decay);
+            setTimeout(()=>{
+                osc.stop();
+                osc.disconnect();
+                gain.disconnect();
+                delete oscillators[idx+octave*10];
+            }, Math.max(120, decay*1000+20));
+        }
+    }
+    // 虚拟按键触发
+    function triggerVirtualKey(idx, isLow, isHigh) {
+        if (modeSelect.value === 'follow') {
+            handleFollowInput(idx);
+            return;
+        }
+        const key = keyOrder[idx];
+        if (pressed[key]) return;
+        pressed[key] = true;
+        let octave = 0;
+        if (isLow) octave = -1;
+        if (isHigh) octave = 1;
+        playNote(idx, octave);
+        for (let y = 0; y < gridSize; y++) grid[idx][y] = noteColors ? noteColors[idx] : '#fff';
+        document.getElementById('keyLabel_' + idx).classList.add('active');
+        drawGrid();
+    }
+    function releaseVirtualKey(idx) {
+        const key = keyOrder[idx];
+        pressed[key] = false;
+        stopNote(idx, 0);
+        for (let y = 0; y < gridSize; y++) grid[idx][y] = null;
+        document.getElementById('keyLabel_' + idx).classList.remove('active');
+        // 松开后目标主色回到中八度
+        barTargetColors[idx] = octaveColors[1].slice();
+        barOctave[idx] = 1;
+        drawGrid();
+    }
+    // 键盘事件
+    let downArrow = false, spaceKey = false;
+    document.addEventListener('keydown', e => {
+        if (modeSelect.value === 'follow') {
+            const key = e.key.toUpperCase();
+            if (keyToCol.hasOwnProperty(key)) {
+                handleFollowInput(keyToCol[key]);
+            }
+            return;
+        }
+        if (e.code === 'ArrowDown') downArrow = true;
+        if (e.code === 'Space') spaceKey = true;
+        const key = e.key.toUpperCase();
+        if (keyToCol.hasOwnProperty(key) && !pressed[key]) {
+            pressed[key] = true;
+            const col = keyToCol[key];
+            let octave = 0;
+            if (downArrow) octave = -1;
+            if (spaceKey) octave = 1;
+            playNote(col, octave);
+            for (let y = 0; y < gridSize; y++) grid[col][y] = '#fff';
+            document.getElementById('keyLabel_' + col).classList.add('active');
+            drawGrid();
+        }
+    });
+    document.addEventListener('keyup', e => {
+        if (e.code === 'ArrowDown') downArrow = false;
+        if (e.code === 'Space') spaceKey = false;
+        const key = e.key.toUpperCase();
+        if (keyToCol.hasOwnProperty(key)) {
+            pressed[key] = false;
+            const col = keyToCol[key];
+            let octave = 0;
+            if (downArrow) octave = -1;
+            if (spaceKey) octave = 1;
+            stopNote(col, octave);
+            for (let y = 0; y < gridSize; y++) grid[col][y] = null;
+            document.getElementById('keyLabel_' + col).classList.remove('active');
+            // 松开后目标主色回到中八度
+            barTargetColors[col] = octaveColors[1].slice();
+            barOctave[col] = 1;
+            drawGrid();
+        }
+    });
+    // Twinkle Twinkle Little Star 音符序列（C C G G A A G | F F E E D D C ...）
+    // 用音阶索引表示：C=0 D=1 E=2 F=3 G=4 A=5 B=6
+    const twinkleNotes = [0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1, 0,0,4,4,5,5,4, 3,3,2,2,1,1,0];
+    const twinkleBeats = [1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2]; // 每拍0.5秒
+    function startFollowing() {
+        followMode = true;
+        followStep = 0;
+        followActive = true;
+        followWaiting = false;
+        followFade = 0;
+        followFadeIdx = -1;
+        for (let x = 0; x < gridSize; x++) for (let y = 0; y < gridSize; y++) grid[x][y] = null;
+        drawGrid();
+        nextFollowNote();
+    }
+    function stopFollowing() {
+        followMode = false;
+        followActive = false;
+        followWaiting = false;
+        followFade = 0;
+        followFadeIdx = -1;
+        for (let x = 0; x < gridSize; x++) for (let y = 0; y < gridSize; y++) grid[x][y] = null;
+        drawGrid();
+    }
+    function followGradientColor(y) {
+        // y: 0~7, 0为底部，7为顶部
+        const t = y / 7;
+        // 蓝色 hsl(210,100%,50%) 到 白色 hsl(0,0%,100%)
+        const h = 210 * (1-t);
+        const s = 100 * (1-t);
+        const l = 50 + 50*t;
+        return `hsl(${h},${s}%,${l}%)`;
+    }
+    function nextFollowNote() {
+        if (followStep >= twinkleNotes.length) {
+            followActive = false;
+            followWaiting = false;
+            followFade = 0;
+            followFadeIdx = -1;
+            return;
+        }
+        let idx = twinkleNotes[followStep];
+        for (let y = 0; y < gridSize; y++) grid[idx][y] = followGradientColor(y);
+        drawGrid();
+        followWaiting = true;
+        followFade = 0;
+        followFadeIdx = idx;
+    }
+    function handleFollowInput(idx) {
+        if (!followMode || !followActive || !followWaiting) return;
+        if (twinkleNotes[followStep] === idx) {
+            playNote(idx, 0); // 按对时播放音符
+            followWaiting = false;
+            followFade = 0.98;
+            followFadeIdx = idx;
+            // 平滑淡出动画
+            const fadeAnim = () => {
+                if (followFade > 0) {
+                    for (let y = 0; y < gridSize; y++) grid[idx][y] = `hsla(210,100%,50%,${followFade * (1-y/7)}),hsla(0,0%,100%,${followFade * (y/7)})`;
+                    // 但canvas不支持多色渐变，改为单色透明度渐变
+                    for (let y = 0; y < gridSize; y++) grid[idx][y] = `hsla(210,100%,50%,${followFade * (1-y/7) + followFade * (y/7)})`;
+                    drawGrid();
+                    followFade -= 0.08;
+                    requestAnimationFrame(fadeAnim);
+                } else {
+                    for (let y = 0; y < gridSize; y++) grid[idx][y] = null;
+                    drawGrid();
+                    followStep++;
+                    setTimeout(nextFollowNote, 180);
+                }
+            };
+            fadeAnim();
+        }
+    }
+    modeSelect.addEventListener('change', e => {
+        if (modeSelect.value === 'follow') {
+            followStartBtn.style.display = '';
+            followReplayBtn.style.display = 'none';
+            songTitle.textContent = 'Twinkle Twinkle Little Star';
+            songTitle.style.display = '';
+            songTitleRow.style.display = 'flex';
+            stopFollowing();
+        } else {
+            followStartBtn.style.display = 'none';
+            followReplayBtn.style.display = 'none';
+            songTitle.textContent = '';
+            songTitle.style.display = 'none';
+            songTitleRow.style.display = 'none';
+            stopFollowing();
+        }
+    });
+    followStartBtn.addEventListener('click', () => {
+        followStartBtn.style.display = 'none';
+        followReplayBtn.style.display = '';
+        startFollowing();
+    });
+    followReplayBtn.addEventListener('click', () => {
+        followStartBtn.style.display = 'none';
+        followReplayBtn.style.display = '';
+        startFollowing();
+    });
+    // 统一按钮样式
+    function styleBtn(btn) {
+        btn.className = 'lang-select';
+        btn.style.fontWeight = 'bold';
+        btn.style.fontSize = '1em';
+        btn.style.padding = '6px 18px';
+        btn.style.margin = '0';
+    }
+    styleBtn(followStartBtn);
+    styleBtn(followReplayBtn);
+    followStartBtn.style.display = 'none';
+    followReplayBtn.style.display = 'none';
+    songTitleRow.appendChild(followStartBtn);
+    songTitleRow.appendChild(followReplayBtn);
+    // 插入到主标题下方、canvas上方
+    mainTitle.parentNode.insertBefore(songTitleRow, canvas);
+    </script>
+</body>
+</html>
