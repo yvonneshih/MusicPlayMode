@@ -111,6 +111,11 @@
         <button class="follow-start-btn">Start</button>
         <button class="follow-replay-btn">Replay</button>
     </div>
+    <div class="volume-row">
+        <span>Volume:</span>
+        <input type="range" min="0" max="100" value="80">
+        <span>80%</span>
+    </div>
     <script>
     const LANGS = {
         en: {
@@ -388,7 +393,7 @@
         gain.gain.value = 0.0;
         osc.connect(gain).connect(audioCtx.destination);
         osc.start();
-        gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + attack);
+        gain.gain.linearRampToValueAtTime(0.18 * globalVolume, audioCtx.currentTime + attack);
         oscillators[idx+octave*10] = {osc, gain, decay};
         // 设置目标主色
         let octaveIdx = octave+1; // -1:低 0:中 1:高 -> 0,1,2
@@ -600,6 +605,18 @@
     songTitleRow.appendChild(followReplayBtn);
     // 插入到主标题下方、canvas上方
     mainTitle.parentNode.insertBefore(songTitleRow, canvas);
+    // 音量控制逻辑
+    let globalVolume = 0.8;
+    const volumeSlider = document.querySelector('.volume-row input');
+    const volumeValue = document.querySelector('.volume-row span');
+    volumeSlider.addEventListener('input', () => {
+        globalVolume = parseInt(volumeSlider.value) / 100;
+        volumeValue.textContent = volumeSlider.value + '%';
+        // 实时调整所有正在播放的音量
+        Object.values(oscillators).forEach(({gain}) => {
+            if (gain) gain.gain.value = 0.18 * globalVolume;
+        });
+    });
     </script>
 </body>
 </html>
