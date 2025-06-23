@@ -193,12 +193,14 @@
     songTitleRow.style.display = 'flex';
     songTitleRow.style.alignItems = 'center';
     songTitleRow.style.justifyContent = 'center';
-    songTitleRow.style.gap = '14px';
+    songTitleRow.style.gap = '8px';
     songTitleRow.style.margin = '10px 0 0 0';
+    songTitleRow.style.maxWidth = '320px';
+    songTitleRow.style.flexWrap = 'wrap';
     const songTitle = document.createElement('div');
     songTitle.className = 'song-title';
     songTitle.style.fontWeight = 'bold';
-    songTitle.style.fontSize = '1.15em';
+    songTitle.style.fontSize = '1em';
     songTitle.style.margin = '0';
     songTitle.style.display = 'none';
     songTitleRow.appendChild(songTitle);
@@ -225,34 +227,73 @@
     let followFadeIdx = -1;
     const followStartBtn = document.querySelector('.follow-start-btn');
     const followReplayBtn = document.querySelector('.follow-replay-btn');
+    keyboardRow.style.display = 'grid';
+    keyboardRow.style.gridTemplateColumns = 'repeat(8, 1fr)';
+    keyboardRow.style.maxWidth = '320px';
+    keyboardRow.style.width = '320px';
+    keyboardRow.style.margin = '0 auto 10px auto';
+    keyboardRow.style.gap = '0';
+    // 优化key-label按钮样式
+    const styleKeyLabel = (el) => {
+        el.style.fontSize = '0.95em';
+        el.style.padding = '4px 10px';
+        el.style.minWidth = '36px';
+        el.style.boxSizing = 'border-box';
+    }
     function setLangUI(lang) {
         const L = LANGS[lang];
         mainTitle.textContent = L.title;
         tipEl.textContent = L.tip;
         keyboardRow.innerHTML = '';
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 8; i++) {
             const div = document.createElement('div');
             div.className = 'key-label';
             div.id = 'keyLabel_' + i;
-            div.textContent = `${L.keys[i]}\n${L.notes[i]}`;
+            if (i < 7) {
+                div.textContent = `${L.keys[i]}\n${L.notes[i]}`;
+            } else {
+                div.textContent = 'K\nhigh do'; // 第8列显示K，高音do
+            }
             div.style.whiteSpace = 'pre';
+            styleKeyLabel(div);
+            div.style.textAlign = 'center';
             // 虚拟按键事件
-            div.addEventListener('mousedown', () => {
-                triggerVirtualKey(i, false, false);
-            });
-            div.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                triggerVirtualKey(i, false, false);
-            }, {passive:false});
-            div.addEventListener('mouseup', () => {
-                releaseVirtualKey(i);
-            });
-            div.addEventListener('mouseleave', () => {
-                releaseVirtualKey(i);
-            });
-            div.addEventListener('touchend', () => {
-                releaseVirtualKey(i);
-            });
+            if (i < 7) {
+                div.addEventListener('mousedown', () => {
+                    triggerVirtualKey(i, false, false);
+                });
+                div.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    triggerVirtualKey(i, false, false);
+                }, {passive:false});
+                div.addEventListener('mouseup', () => {
+                    releaseVirtualKey(i);
+                });
+                div.addEventListener('mouseleave', () => {
+                    releaseVirtualKey(i);
+                });
+                div.addEventListener('touchend', () => {
+                    releaseVirtualKey(i);
+                });
+            } else {
+                // K键，高音do
+                div.addEventListener('mousedown', () => {
+                    triggerVirtualKey(0, false, true); // 0号音，高八度
+                });
+                div.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    triggerVirtualKey(0, false, true);
+                }, {passive:false});
+                div.addEventListener('mouseup', () => {
+                    releaseVirtualKey(0);
+                });
+                div.addEventListener('mouseleave', () => {
+                    releaseVirtualKey(0);
+                });
+                div.addEventListener('touchend', () => {
+                    releaseVirtualKey(0);
+                });
+            }
             keyboardRow.appendChild(div);
         }
         instrumentLabel.textContent = L.instrument;
@@ -545,9 +586,11 @@
     function styleBtn(btn) {
         btn.className = 'lang-select';
         btn.style.fontWeight = 'bold';
-        btn.style.fontSize = '1em';
-        btn.style.padding = '6px 18px';
+        btn.style.fontSize = '0.95em';
+        btn.style.padding = '4px 10px';
         btn.style.margin = '0';
+        btn.style.minWidth = '60px';
+        btn.style.boxSizing = 'border-box';
     }
     styleBtn(followStartBtn);
     styleBtn(followReplayBtn);
