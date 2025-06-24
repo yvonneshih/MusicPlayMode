@@ -53,6 +53,11 @@
             background: #ffe066;
             color: #222;
         }
+        .key-label.highlight {
+            background: #ffe066;
+            color: #222;
+            box-shadow: 0 0 0 2px #ffe06699;
+        }
         .tip { color: #aaa; margin: 10px 0 0 0; text-align: center; }
         .intro {
             margin: 18px 0 0 0;
@@ -93,6 +98,16 @@
         </select>
     </div>
     <h1 id="mainTitle">Pixel Music Play Mode</h1>
+    <div class="song-bar" style="display:none; flex-direction:column; align-items:center; width:100%; max-width:320px; margin-bottom:8px;">
+        <div class="song-title" id="songTitle" style="font-weight:bold; font-size:1em; margin-bottom:4px; text-align:center;"></div>
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; width:100%;">
+            <select id="songSelect" class="lang-select" style="margin:0;">
+                <option value="twinkle">Twinkle Twinkle Little Star</option>
+                <option value="london">London Bridge is Falling Down</option>
+            </select>
+            <button class="follow-play-btn lang-select" id="followPlayBtn" style="font-weight:bold; font-size:0.95em; padding:4px 10px; min-width:60px; margin:0;">Play</button>
+        </div>
+    </div>
     <canvas id="musicCanvas" width="320" height="320"></canvas>
     <div class="keyboard-row" id="keyboardRow"></div>
     <div class="instrument-row">
@@ -106,11 +121,6 @@
     </div>
     <div class="tip" id="tip">Press keys (A S D F G H J) to play do re mi fa so la si</div>
     <div class="intro" id="intro"></div>
-    <div class="song-title-row">
-        <div class="song-title">Twinkle Twinkle Little Star</div>
-        <button class="follow-start-btn">Start</button>
-        <button class="follow-replay-btn">Replay</button>
-    </div>
     <div class="volume-row">
         <span>Volume:</span>
         <input type="range" min="0" max="100" value="80">
@@ -159,7 +169,7 @@
 - <b>스페이스바</b> + 키: 고음 옥타브.<br>
 - 여러 키를 동시에 누르면 코드 연주 가능.<br>
 - <b>길게 누르면</b> 해당 열이 점점 더 높아집니다.<br>
-- 아래에서 악기를 바꿀 수 있습니다.`,
+- 아래에서 악기를 바꿀 수 있습니다。`,
             notes: ["도", "레", "미", "파", "솔", "라", "시"],
             keys: ["A", "S", "D", "F", "G", "H", "J"]
         },
@@ -174,7 +184,7 @@
 - Hold <b>mellomrom</b> + tast for høyere oktav.<br>
 - Flere taster = akkord.<br>
 - <b>Hold inne</b> en tast for å gjøre søylen høyere.<br>
-- Du kan bytte instrument nedenfor.`,
+- Du kan bytte instrument nedenfor。`,
             notes: ["do", "re", "mi", "fa", "so", "la", "si"],
             keys: ["A", "S", "D", "F", "G", "H", "J"]
         }
@@ -191,24 +201,10 @@
     const instrumentSelect = document.getElementById('instrumentSelect');
     const intro = document.getElementById('intro');
     const modeSelect = document.querySelector('.mode-select');
-    // 移除所有多余的.song-title，只保留一个
-    [...document.querySelectorAll('.song-title')].forEach(el => el.remove());
-    // 创建唯一的songTitleRow
-    const songTitleRow = document.createElement('div');
-    songTitleRow.style.display = 'flex';
-    songTitleRow.style.alignItems = 'center';
-    songTitleRow.style.justifyContent = 'center';
-    songTitleRow.style.gap = '8px';
-    songTitleRow.style.margin = '10px 0 0 0';
-    songTitleRow.style.maxWidth = '320px';
-    songTitleRow.style.flexWrap = 'wrap';
-    const songTitle = document.createElement('div');
-    songTitle.className = 'song-title';
-    songTitle.style.fontWeight = 'bold';
-    songTitle.style.fontSize = '1em';
-    songTitle.style.margin = '0';
-    songTitle.style.display = 'none';
-    songTitleRow.appendChild(songTitle);
+    const songSelect = document.getElementById('songSelect');
+    const songBar = document.querySelector('.song-bar');
+    const songTitle = document.getElementById('songTitle');
+    const followPlayBtn = document.getElementById('followPlayBtn');
     let currentLang = 'en';
     let pressed = {};
     let audioCtx, oscillators = {};
@@ -230,8 +226,10 @@
     let followWaiting = false;
     let followFade = 0;
     let followFadeIdx = -1;
-    const followStartBtn = document.querySelector('.follow-start-btn');
-    const followReplayBtn = document.querySelector('.follow-replay-btn');
+    // 能量条高度动画状态
+    let barGrow = Array(7).fill(0); // 0~1，出现动画进度
+    // 动态能量条渐变色动画参数
+    let energyGradientPhase = 0;
     keyboardRow.style.display = 'grid';
     keyboardRow.style.gridTemplateColumns = 'repeat(8, 1fr)';
     keyboardRow.style.maxWidth = '320px';
@@ -280,23 +278,36 @@
                 div.addEventListener('touchend', () => {
                     releaseVirtualKey(i);
                 });
-            } else {
-                // K键，高音do
-                div.addEventListener('mousedown', () => {
-                    triggerVirtualKey(0, false, true); // 0号音，高八度
-                });
-                div.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    triggerVirtualKey(0, false, true);
-                }, {passive:false});
-                div.addEventListener('mouseup', () => {
-                    releaseVirtualKey(0);
+                // 悬停能量积累动画
+                div.addEventListener('mouseenter', () => {
+                    if (modeSelect.value !== 'follow') {
+                        pressed[L.keys[i]] = true;
+                    }
                 });
                 div.addEventListener('mouseleave', () => {
-                    releaseVirtualKey(0);
+                    if (modeSelect.value !== 'follow') {
+                        pressed[L.keys[i]] = false;
+                    }
+                });
+            } else {
+                // K键，高音do，仅自定义模式下可用
+                div.addEventListener('mousedown', () => {
+                    if (modeSelect.value !== 'follow') triggerVirtualKey(0, false, true);
+                });
+                div.addEventListener('touchstart', (e) => {
+                    if (modeSelect.value !== 'follow') {
+                        e.preventDefault();
+                        triggerVirtualKey(0, false, true);
+                    }
+                }, {passive:false});
+                div.addEventListener('mouseup', () => {
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
+                });
+                div.addEventListener('mouseleave', () => {
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
                 });
                 div.addEventListener('touchend', () => {
-                    releaseVirtualKey(0);
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
                 });
             }
             keyboardRow.appendChild(div);
@@ -337,29 +348,52 @@
     }
     function drawGrid() {
         ctx.clearRect(0,0,canvas.width,canvas.height);
+        // 动态渐变色：蓝->绿->黄->蓝 循环
+        // 蓝: 210,100%,60%  绿: 120,100%,60%  黄: 50,100%,60%
+        const phase = energyGradientPhase;
+        // 0~1: 蓝->绿, 1~2: 绿->黄, 2~3: 黄->蓝
+        let hue1, hue2;
+        let t = phase % 1;
+        if (phase < 1) { hue1 = 210; hue2 = 120; }
+        else if (phase < 2) { hue1 = 120; hue2 = 50; t = phase-1; }
+        else { hue1 = 50; hue2 = 210; t = phase-2; }
+        // 计算底色hue
+        const baseHue = hue1 + (hue2-hue1)*t;
         for (let x = 0; x < gridSize; x++) {
             for (let y = 0; y < gridSize; y++) {
-                if (followMode && followWaiting) {
-                    // 跟随模式下直接渲染grid
-                    ctx.fillStyle = grid[x][y] || '#222';
-                } else {
-                    // 自定义模式下渲染动态竖条
-                    let h = 0;
-                    if (x < 7 && holdTimes[x] > 0) {
-                        h = Math.min(gridSize, 1 + Math.floor(holdTimes[x]/6));
-                    }
-                    if (x < 7 && y >= gridSize-h && holdTimes[x] > 0) {
-                        const t = (y - (gridSize-h)) / Math.max(1,h-1);
-                        ctx.fillStyle = lerpDynamicToWhite(x, t);
+                let h = 0;
+                if (x < 7 && holdTimes[x] > 0) {
+                    let grow = barGrow[x] || 0;
+                    h = Math.max(1, Math.round(grow * gridSize));
+                    if (y >= gridSize-h) {
+                        // 动态渐变色，底色hue->白
+                        const t2 = (y - (gridSize-h)) / Math.max(1,h-1);
+                        const hue = baseHue;
+                        const sat = 100;
+                        const light = 60 + 40*t2; // 顶部更亮
+                        ctx.fillStyle = `hsl(${hue},${sat}%,${light}%)`;
                     } else {
                         ctx.fillStyle = grid[x][y] || '#222';
                     }
+                } else {
+                    ctx.fillStyle = grid[x][y] || '#222';
                 }
                 ctx.fillRect(x*40+4, y*40+4, 32, 32);
             }
         }
     }
     function animate() {
+        // 动态渐变色相位推进
+        energyGradientPhase += 0.012;
+        if (energyGradientPhase >= 3) energyGradientPhase -= 3;
+        // 能量条出现动画
+        for (let i = 0; i < 7; i++) {
+            if (holdTimes[i] > 0) {
+                barGrow[i] = Math.min(1, barGrow[i] + 0.12);
+            } else {
+                barGrow[i] = 0;
+            }
+        }
         if (!(followMode && followWaiting)) {
             for (let i = 0; i < 7; i++) {
                 if (pressed[keyOrder[i]]) holdTimes[i]++;
@@ -486,10 +520,34 @@
             drawGrid();
         }
     });
-    // Twinkle Twinkle Little Star 音符序列（C C G G A A G | F F E E D D C ...）
-    // 用音阶索引表示：C=0 D=1 E=2 F=3 G=4 A=5 B=6
+    // 歌曲数据
+    // Twinkle Twinkle Little Star
     const twinkleNotes = [0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1, 0,0,4,4,5,5,4, 3,3,2,2,1,1,0];
-    const twinkleBeats = [1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2]; // 每拍0.5秒
+    const twinkleBeats = [1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2];
+    // London Bridge is Falling Down
+    // C D E C D E E D C D E C C D E C D E E D C D E C
+    // 0 1 2 0 1 2 2 1 0 1 2 0 0 1 2 0 1 2 2 1 0 1 2 0
+    const londonNotes = [4,5,4,3,2,3,4,-1,1,2,3,-1,2,3,4,-1,4,5,4,3,2,3,4,1,0,-1,4,-1,0,-1,-1,-1];
+    const londonBeats = [1,1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1,2,2,2];
+    // 歌曲选择逻辑
+    let currentSong = 'twinkle';
+    let songNotes = twinkleNotes;
+    let songBeats = twinkleBeats;
+    songSelect.addEventListener('change', e => {
+        currentSong = e.target.value;
+        if (currentSong === 'twinkle') {
+            songNotes = twinkleNotes;
+            songBeats = twinkleBeats;
+            songTitle.textContent = 'Twinkle Twinkle Little Star';
+        } else {
+            songNotes = londonNotes;
+            songBeats = londonBeats;
+            songTitle.textContent = 'London Bridge is Falling Down';
+        }
+        stopFollowing();
+        clearAllKeyHighlights();
+    });
+    // 跟随模式播放时用当前歌曲
     function startFollowing() {
         followMode = true;
         followStep = 0;
@@ -509,6 +567,7 @@
         followFadeIdx = -1;
         for (let x = 0; x < gridSize; x++) for (let y = 0; y < gridSize; y++) grid[x][y] = null;
         drawGrid();
+        clearAllKeyHighlights();
     }
     function followGradientColor(y) {
         // y: 0~7, 0为底部，7为顶部
@@ -520,15 +579,25 @@
         return `hsl(${h},${s}%,${l}%)`;
     }
     function nextFollowNote() {
-        if (followStep >= twinkleNotes.length) {
+        if (followStep >= songNotes.length) {
             followActive = false;
             followWaiting = false;
             followFade = 0;
             followFadeIdx = -1;
+            clearAllKeyHighlights();
             return;
         }
-        let idx = twinkleNotes[followStep];
-        for (let y = 0; y < gridSize; y++) grid[idx][y] = followGradientColor(y);
+        let idx = songNotes[followStep];
+        clearAllKeyHighlights();
+        if (idx === -1) {
+            followStep++;
+            setTimeout(nextFollowNote, 400);
+            return;
+        }
+        // 只高亮A~J，不高亮K
+        if (idx < 7) highlightFollowKey(idx);
+        // 不再高亮bar，直接清空bar
+        for (let x = 0; x < gridSize; x++) for (let y = 0; y < gridSize; y++) grid[x][y] = null;
         drawGrid();
         followWaiting = true;
         followFade = 0;
@@ -536,25 +605,51 @@
     }
     function handleFollowInput(idx) {
         if (!followMode || !followActive || !followWaiting) return;
-        if (twinkleNotes[followStep] === idx) {
+        if (songNotes[followStep] === idx && idx < 7) {
             playNote(idx, 0); // 按对时播放音符
+            // 生成bar动画
+            for (let y = 0; y < gridSize; y++) grid[idx][y] = '#fff';
+            document.getElementById('keyLabel_' + idx).classList.add('active');
+            drawGrid();
             followWaiting = false;
-            followFade = 0.98;
+            followFade = 1.0;
             followFadeIdx = idx;
-            // 平滑淡出动画
+            clearAllKeyHighlights();
+            // bar动画淡出（高度和透明度同步递减），但不阻塞下一个提示音
+            let fadeStep = 0;
+            const fadeFrames = 30; // 约0.5秒
+            const idxCopy = idx;
+            followStep++;
+            setTimeout(nextFollowNote, 180);
+            // 记录当前渐变色hue
+            const phase = energyGradientPhase;
+            let hue1, hue2;
+            let t = phase % 1;
+            if (phase < 1) { hue1 = 210; hue2 = 120; }
+            else if (phase < 2) { hue1 = 120; hue2 = 50; t = phase-1; }
+            else { hue1 = 50; hue2 = 210; t = phase-2; }
+            const baseHue = hue1 + (hue2-hue1)*t;
             const fadeAnim = () => {
-                if (followFade > 0) {
-                    for (let y = 0; y < gridSize; y++) grid[idx][y] = `hsla(210,100%,50%,${followFade * (1-y/7)}),hsla(0,0%,100%,${followFade * (y/7)})`;
-                    // 但canvas不支持多色渐变，改为单色透明度渐变
-                    for (let y = 0; y < gridSize; y++) grid[idx][y] = `hsla(210,100%,50%,${followFade * (1-y/7) + followFade * (y/7)})`;
+                if (fadeStep < fadeFrames) {
+                    const h = Math.round(gridSize * (1 - fadeStep / fadeFrames));
+                    for (let y = 0; y < gridSize; y++) {
+                        if (y >= gridSize - h) {
+                            const t2 = (y - (gridSize-h)) / Math.max(1,h-1);
+                            const hue = baseHue;
+                            const sat = 100;
+                            const light = 60 + 40*t2;
+                            grid[idxCopy][y] = `hsla(${hue},${sat}%,${light}%,${1 - fadeStep/fadeFrames})`;
+                        } else {
+                            grid[idxCopy][y] = null;
+                        }
+                    }
                     drawGrid();
-                    followFade -= 0.08;
+                    fadeStep++;
                     requestAnimationFrame(fadeAnim);
                 } else {
-                    for (let y = 0; y < gridSize; y++) grid[idx][y] = null;
+                    for (let y = 0; y < gridSize; y++) grid[idxCopy][y] = null;
+                    document.getElementById('keyLabel_' + idxCopy).classList.remove('active');
                     drawGrid();
-                    followStep++;
-                    setTimeout(nextFollowNote, 180);
                 }
             };
             fadeAnim();
@@ -562,49 +657,18 @@
     }
     modeSelect.addEventListener('change', e => {
         if (modeSelect.value === 'follow') {
-            followStartBtn.style.display = '';
-            followReplayBtn.style.display = 'none';
-            songTitle.textContent = 'Twinkle Twinkle Little Star';
-            songTitle.style.display = '';
-            songTitleRow.style.display = 'flex';
+            songBar.style.display = '';
+            songTitle.textContent = currentSong === 'twinkle' ? 'Twinkle Twinkle Little Star' : 'London Bridge is Falling Down';
             stopFollowing();
         } else {
-            followStartBtn.style.display = 'none';
-            followReplayBtn.style.display = 'none';
-            songTitle.textContent = '';
-            songTitle.style.display = 'none';
-            songTitleRow.style.display = 'none';
+            songBar.style.display = 'none';
             stopFollowing();
+            clearAllKeyHighlights();
         }
     });
-    followStartBtn.addEventListener('click', () => {
-        followStartBtn.style.display = 'none';
-        followReplayBtn.style.display = '';
+    followPlayBtn.addEventListener('click', () => {
         startFollowing();
     });
-    followReplayBtn.addEventListener('click', () => {
-        followStartBtn.style.display = 'none';
-        followReplayBtn.style.display = '';
-        startFollowing();
-    });
-    // 统一按钮样式
-    function styleBtn(btn) {
-        btn.className = 'lang-select';
-        btn.style.fontWeight = 'bold';
-        btn.style.fontSize = '0.95em';
-        btn.style.padding = '4px 10px';
-        btn.style.margin = '0';
-        btn.style.minWidth = '60px';
-        btn.style.boxSizing = 'border-box';
-    }
-    styleBtn(followStartBtn);
-    styleBtn(followReplayBtn);
-    followStartBtn.style.display = 'none';
-    followReplayBtn.style.display = 'none';
-    songTitleRow.appendChild(followStartBtn);
-    songTitleRow.appendChild(followReplayBtn);
-    // 插入到主标题下方、canvas上方
-    mainTitle.parentNode.insertBefore(songTitleRow, canvas);
     // 音量控制逻辑
     let globalVolume = 0.8;
     const volumeSlider = document.querySelector('.volume-row input');
@@ -617,6 +681,20 @@
             if (gain) gain.gain.value = 0.18 * globalVolume;
         });
     });
+    function highlightFollowKey(idx) {
+        // 只高亮当前要按的按钮
+        for (let i = 0; i < 8; i++) {
+            const el = document.getElementById('keyLabel_' + i);
+            if (i === idx) el && el.classList.add('highlight');
+            else el && el.classList.remove('highlight');
+        }
+    }
+    function clearAllKeyHighlights() {
+        for (let i = 0; i < 8; i++) {
+            const el = document.getElementById('keyLabel_' + i);
+            el && el.classList.remove('highlight');
+        }
+    }
     </script>
 </body>
-</html>
+</html> 
