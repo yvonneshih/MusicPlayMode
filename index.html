@@ -82,6 +82,14 @@
             padding: 6px 14px;
             font-size: 1em;
         }
+        /* 新增高亮Play按钮样式 */
+        .play-highlight {
+            background: #ffe066 !important;
+            color: #222 !important;
+            box-shadow: 0 0 0 3px #ffe06699;
+            border: 2px solid #ffe066;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -366,6 +374,13 @@
         mainTitle.textContent = L.title;
         tipEl.textContent = L.tip;
         keyboardRow.innerHTML = '';
+        // 多语言节拍器label
+        const metronomeLabels = {
+            en: 'M\nMetronome',
+            zh: 'M\n节拍器',
+            ko: 'M\n메트로놈',
+            no: 'M\nMetronom'
+        };
         for (let i = 0; i < 8; i++) {
             const div = document.createElement('div');
             div.className = 'key-label';
@@ -373,7 +388,7 @@
             if (i < 7) {
                 div.textContent = `${L.keys[i]}\n${L.notes[i]}`;
             } else {
-                div.textContent = 'K\nhigh do';
+                div.textContent = metronomeLabels[lang] || 'M\nMetronome';
             }
             div.style.whiteSpace = 'pre';
             styleKeyLabel(div);
@@ -397,25 +412,13 @@
                     releaseVirtualKey(i);
                 });
             } else {
-                // K键，高音do，仅自定义模式下可用
                 div.addEventListener('mousedown', () => {
-                    if (modeSelect.value !== 'follow') triggerVirtualKey(0, false, true);
+                    toggleMetronome();
                 });
                 div.addEventListener('touchstart', (e) => {
-                    if (modeSelect.value !== 'follow') {
-                        e.preventDefault();
-                        triggerVirtualKey(0, false, true);
-                    }
+                    e.preventDefault();
+                    toggleMetronome();
                 }, {passive:false});
-                div.addEventListener('mouseup', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
-                div.addEventListener('mouseleave', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
-                div.addEventListener('touchend', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
             }
             keyboardRow.appendChild(div);
         }
@@ -853,6 +856,60 @@
             el && el.classList.remove('highlight');
         }
     }
+    // 节拍器相关
+    let metronomeOn = false;
+    let metronomeTimer = null;
+    let metronomeBpm = 80;
+    function toggleMetronome() {
+        metronomeOn = !metronomeOn;
+        const el = document.getElementById('keyLabel_7');
+        if (metronomeOn) {
+            el.classList.add('active');
+            startMetronome();
+        } else {
+            el.classList.remove('active');
+            stopMetronome();
+        }
+    }
+    function startMetronome() {
+        if (metronomeTimer) clearInterval(metronomeTimer);
+        metronomeTimer = setInterval(()=>{
+            flashMetronome();
+            playMetronomeClick();
+        }, 60000/metronomeBpm);
+    }
+    function stopMetronome() {
+        if (metronomeTimer) clearInterval(metronomeTimer);
+        metronomeTimer = null;
+        document.getElementById('keyLabel_7').classList.remove('active');
+    }
+    function flashMetronome() {
+        const el = document.getElementById('keyLabel_7');
+        el.classList.add('highlight');
+        setTimeout(()=>{
+            el.classList.remove('highlight');
+        }, 120);
+    }
+    function playMetronomeClick() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 1200;
+        gain.gain.value = 0.18 * globalVolume;
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+        setTimeout(()=>{
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+        }, 100);
+    }
+    window.onload = function() {
+        document.getElementById('followPlayBtn').classList.add('play-highlight');
+        // 你原有的onload逻辑如果有，也可以合并到这里
+    };
     </script>
 </body>
 </html> 
