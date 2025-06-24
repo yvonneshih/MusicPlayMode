@@ -104,6 +104,11 @@
             <select id="songSelect" class="lang-select" style="margin:0;">
                 <option value="twinkle">Twinkle Twinkle Little Star</option>
                 <option value="london">London Bridge is Falling Down</option>
+                <option value="ohsusanna">Oh! Susanna</option>
+                <option value="tiger">Two Tigers</option>
+                <option value="mary">Mary Had a Little Lamb</option>
+                <option value="painter">Painter</option>
+                <option value="jingle">Jingle Bells</option>
             </select>
             <button class="follow-play-btn lang-select" id="followPlayBtn" style="font-weight:bold; font-size:0.95em; padding:4px 10px; min-width:60px; margin:0;">Play</button>
         </div>
@@ -132,6 +137,25 @@
             title: "Pixel Music Play Mode",
             tip: "Press keys (A S D F G H J) to play do re mi fa so la si",
             instrument: "Instrument",
+            play: "Play",
+            songs: [
+                { value: "twinkle", label: "Twinkle Twinkle Little Star" },
+                { value: "london", label: "London Bridge is Falling Down" },
+                { value: "ohsusanna", label: "Oh! Susanna" },
+                { value: "tiger", label: "Two Tigers" },
+                { value: "mary", label: "Mary Had a Little Lamb" },
+                { value: "painter", label: "Painter" },
+                { value: "jingle", label: "Jingle Bells" }
+            ],
+            songTitles: {
+                twinkle: "Twinkle Twinkle Little Star",
+                london: "London Bridge is Falling Down",
+                ohsusanna: "Oh! Susanna",
+                tiger: "Two Tigers",
+                mary: "Mary Had a Little Lamb",
+                painter: "Painter",
+                jingle: "Jingle Bells"
+            },
             instruments: ["Piano", "Guitar", "Flute", "Cello"],
             intro: `<b>How to play:</b><br>
 - Press <b>A S D F G H J</b> to play do re mi fa so la si.<br>
@@ -147,6 +171,25 @@
             title: "像素音乐演奏模式",
             tip: "按下键盘 (A S D F G H J) 演奏哆来咪发嗦拉西",
             instrument: "乐器",
+            play: "播放",
+            songs: [
+                { value: "twinkle", label: "一闪一闪亮晶晶" },
+                { value: "london", label: "伦敦桥垮下来" },
+                { value: "ohsusanna", label: "哦！苏珊娜" },
+                { value: "tiger", label: "两只老虎" },
+                { value: "mary", label: "玛丽有只小羊羔" },
+                { value: "painter", label: "粉刷匠" },
+                { value: "jingle", label: "铃儿响叮当" }
+            ],
+            songTitles: {
+                twinkle: "一闪一闪亮晶晶",
+                london: "伦敦桥垮下来",
+                ohsusanna: "哦！苏珊娜",
+                tiger: "两只老虎",
+                mary: "玛丽有只小羊羔",
+                painter: "粉刷匠",
+                jingle: "铃儿响叮当"
+            },
             instruments: ["钢琴", "吉他", "长笛", "大提琴"],
             intro: `<b>玩法说明：</b><br>
 - 按 <b>A S D F G H J</b> 演奏哆来咪发嗦拉西。<br>
@@ -162,6 +205,25 @@
             title: "픽셀 음악 연주 모드",
             tip: "A S D F G H J 키로 도레미파솔라시를 연주하세요",
             instrument: "악기",
+            play: "재생",
+            songs: [
+                { value: "twinkle", label: "반짝반짝 작은별" },
+                { value: "london", label: "런던 브릿지" },
+                { value: "ohsusanna", label: "오! 수잔나" },
+                { value: "tiger", label: "두 마리 호랑이" },
+                { value: "mary", label: "메리의 작은 양" },
+                { value: "painter", label: "페인터" },
+                { value: "jingle", label: "징글벨" }
+            ],
+            songTitles: {
+                twinkle: "반짝반짝 작은별",
+                london: "런던 브릿지",
+                ohsusanna: "오! 수잔나",
+                tiger: "두 마리 호랑이",
+                mary: "메리의 작은 양",
+                painter: "페인터",
+                jingle: "징글벨"
+            },
             instruments: ["피아노", "기타", "플루트", "첼로"],
             intro: `<b>플레이 방법:</b><br>
 - <b>A S D F G H J</b> 키로 도레미파솔라시를 연주하세요.<br>
@@ -177,6 +239,25 @@
             title: "Piksel Musikkspill-modus",
             tip: "Trykk på tastene (A S D F G H J) for å spille do re mi fa so la si",
             instrument: "Instrument",
+            play: "Spill",
+            songs: [
+                { value: "twinkle", label: "Blinke blinke stjernelill" },
+                { value: "london", label: "London Bridge" },
+                { value: "ohsusanna", label: "Oh! Susanna" },
+                { value: "tiger", label: "To tigre" },
+                { value: "mary", label: "Mary Had a Little Lamb" },
+                { value: "painter", label: "Maler" },
+                { value: "jingle", label: "Bjelleklang" }
+            ],
+            songTitles: {
+                twinkle: "Blinke blinke stjernelill",
+                london: "London Bridge",
+                ohsusanna: "Oh! Susanna",
+                tiger: "To tigre",
+                mary: "Mary Had a Little Lamb",
+                painter: "Maler",
+                jingle: "Bjelleklang"
+            },
             instruments: ["Piano", "Gitar", "Fløyte", "Cello"],
             intro: `<b>Slik spiller du:</b><br>
 - Trykk <b>A S D F G H J</b> for å spille do re mi fa so la si.<br>
@@ -206,6 +287,7 @@
     const songTitle = document.getElementById('songTitle');
     const followPlayBtn = document.getElementById('followPlayBtn');
     let currentLang = 'en';
+    let currentSong = 'twinkle';
     let pressed = {};
     let audioCtx, oscillators = {};
     // 7音阶映射到8列（最后一列为和弦/高音/留白）
@@ -255,63 +337,27 @@
             if (i < 7) {
                 div.textContent = `${L.keys[i]}\n${L.notes[i]}`;
             } else {
-                div.textContent = 'K\nhigh do'; // 第8列显示K，高音do
+                div.textContent = 'K\nhigh do';
             }
             div.style.whiteSpace = 'pre';
             styleKeyLabel(div);
             div.style.textAlign = 'center';
-            // 虚拟按键事件
-            if (i < 7) {
-                div.addEventListener('mousedown', () => {
-                    triggerVirtualKey(i, false, false);
-                });
-                div.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    triggerVirtualKey(i, false, false);
-                }, {passive:false});
-                div.addEventListener('mouseup', () => {
-                    releaseVirtualKey(i);
-                });
-                div.addEventListener('mouseleave', () => {
-                    releaseVirtualKey(i);
-                });
-                div.addEventListener('touchend', () => {
-                    releaseVirtualKey(i);
-                });
-                // 悬停能量积累动画
-                div.addEventListener('mouseenter', () => {
-                    if (modeSelect.value !== 'follow') {
-                        pressed[L.keys[i]] = true;
-                    }
-                });
-                div.addEventListener('mouseleave', () => {
-                    if (modeSelect.value !== 'follow') {
-                        pressed[L.keys[i]] = false;
-                    }
-                });
-            } else {
-                // K键，高音do，仅自定义模式下可用
-                div.addEventListener('mousedown', () => {
-                    if (modeSelect.value !== 'follow') triggerVirtualKey(0, false, true);
-                });
-                div.addEventListener('touchstart', (e) => {
-                    if (modeSelect.value !== 'follow') {
-                        e.preventDefault();
-                        triggerVirtualKey(0, false, true);
-                    }
-                }, {passive:false});
-                div.addEventListener('mouseup', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
-                div.addEventListener('mouseleave', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
-                div.addEventListener('touchend', () => {
-                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
-                });
-            }
             keyboardRow.appendChild(div);
         }
+        // 歌曲下拉框多语言
+        songSelect.innerHTML = '';
+        L.songs.forEach(song => {
+            const opt = document.createElement('option');
+            opt.value = song.value;
+            opt.textContent = song.label;
+            songSelect.appendChild(opt);
+        });
+        songSelect.value = currentSong;
+        // 歌曲标题多语言
+        songTitle.textContent = L.songTitles[currentSong] || '';
+        // Play按钮多语言
+        followPlayBtn.textContent = L.play;
+        // 乐器
         instrumentLabel.textContent = L.instrument;
         for (let i = 0; i < instrumentSelect.options.length; i++) {
             instrumentSelect.options[i].textContent = L.instruments[i];
@@ -521,29 +567,53 @@
         }
     });
     // 歌曲数据
-    // Twinkle Twinkle Little Star
     const twinkleNotes = [0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1, 0,0,4,4,5,5,4, 3,3,2,2,1,1,0];
     const twinkleBeats = [1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2, 1,1,1,1,1,1,2];
-    // London Bridge is Falling Down
-    // C D E C D E E D C D E C C D E C D E E D C D E C
-    // 0 1 2 0 1 2 2 1 0 1 2 0 0 1 2 0 1 2 2 1 0 1 2 0
     const londonNotes = [4,5,4,3,2,3,4,-1,1,2,3,-1,2,3,4,-1,4,5,4,3,2,3,4,1,0,-1,4,-1,0,-1,-1,-1];
     const londonBeats = [1,1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1,2,2,2];
+    const ohSusannaNotes = [0,0,1,2,2,1,0,1,1,2,4,0,-1,-1,-1,4,4,5,4,2,1,0,1,2,1,0,0,-1,-1,-1];
+    const ohSusannaBeats = [1,1,1,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4];
+    // 两只老虎
+    const tigerNotes = [0,1,2,0, 0,1,2,0, 2,3,4,-1, 2,3,4,-1, 4,5,4,3,2,0, 4,5,4,3,2,0, 0,4,0,-1, 0,4,0,-1];
+    const tigerBeats = [1,1,1,1, 1,1,1,1, 1,1,2,1, 1,1,2,1, 1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,2,1, 1,1,2,1];
+    // 玛丽有只小羊羔
+    const maryNotes = [2,1,0,1,2,2,2,-1,1,1,1,-1,2,2,2,-1,2,1,0,1,2,2,2,2,1,1,2,1,0,-1,-1,-1];
+    const maryBeats = [1,1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,4];
+    // 粉刷匠
+    const painterNotes = [4,2,4,2, 4,2,0,-1, 1,3,2,1, 4,-1,-1,-1, 4,2,4,2, 4,2,0,-1, 1,3,2,1, 0,-1,-1,-1];
+    const painterBeats = [1,1,1,1, 1,1,2,1, 1,1,1,1,2,1,1,1, 1,1,1,1, 1,1,2,1, 1,1,1,1,2,1,1,1];
+    // 铃儿响叮当
+    const jingleNotes = [2,2,2,-1, 2,2,2,-1, 2,4,0,1,2,-1,-1,-1, 3,3,3,3, 3,2,2,2,2,1,1,2,1,-1,4,-1,2,2,2,-1, 2,2,2,-1, 2,4,0,1,2,-1,-1,-1, 4,4,3,1,0,-1,-1,-1, 4,4,3,1,0,-1,-1,-1];
+    const jingleBeats = [1,1,2,1, 1,1,2,1, 1,1,1,1,2,1,1,1, 1,1,1,1, 1,1,1,1,1,1,1,1,2,1,1,1, 1,1,2,1, 1,1,2,1, 1,1,1,1,2,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1];
     // 歌曲选择逻辑
-    let currentSong = 'twinkle';
     let songNotes = twinkleNotes;
     let songBeats = twinkleBeats;
     songSelect.addEventListener('change', e => {
         currentSong = e.target.value;
+        const L = LANGS[currentLang];
         if (currentSong === 'twinkle') {
             songNotes = twinkleNotes;
             songBeats = twinkleBeats;
-            songTitle.textContent = 'Twinkle Twinkle Little Star';
-        } else {
+        } else if (currentSong === 'london') {
             songNotes = londonNotes;
             songBeats = londonBeats;
-            songTitle.textContent = 'London Bridge is Falling Down';
+        } else if (currentSong === 'ohsusanna') {
+            songNotes = ohSusannaNotes;
+            songBeats = ohSusannaBeats;
+        } else if (currentSong === 'tiger') {
+            songNotes = tigerNotes;
+            songBeats = tigerBeats;
+        } else if (currentSong === 'mary') {
+            songNotes = maryNotes;
+            songBeats = maryBeats;
+        } else if (currentSong === 'painter') {
+            songNotes = painterNotes;
+            songBeats = painterBeats;
+        } else if (currentSong === 'jingle') {
+            songNotes = jingleNotes;
+            songBeats = jingleBeats;
         }
+        songTitle.textContent = L.songTitles[currentSong] || '';
         stopFollowing();
         clearAllKeyHighlights();
     });
@@ -658,7 +728,8 @@
     modeSelect.addEventListener('change', e => {
         if (modeSelect.value === 'follow') {
             songBar.style.display = '';
-            songTitle.textContent = currentSong === 'twinkle' ? 'Twinkle Twinkle Little Star' : 'London Bridge is Falling Down';
+            const L = LANGS[currentLang];
+            songTitle.textContent = L.songTitles[currentSong] || '';
             stopFollowing();
         } else {
             songBar.style.display = 'none';
