@@ -378,6 +378,45 @@
             div.style.whiteSpace = 'pre';
             styleKeyLabel(div);
             div.style.textAlign = 'center';
+            // 事件绑定
+            if (i < 7) {
+                div.addEventListener('mousedown', () => {
+                    triggerVirtualKey(i, false, false);
+                });
+                div.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    triggerVirtualKey(i, false, false);
+                }, {passive:false});
+                div.addEventListener('mouseup', () => {
+                    releaseVirtualKey(i);
+                });
+                div.addEventListener('mouseleave', () => {
+                    releaseVirtualKey(i);
+                });
+                div.addEventListener('touchend', () => {
+                    releaseVirtualKey(i);
+                });
+            } else {
+                // K键，高音do，仅自定义模式下可用
+                div.addEventListener('mousedown', () => {
+                    if (modeSelect.value !== 'follow') triggerVirtualKey(0, false, true);
+                });
+                div.addEventListener('touchstart', (e) => {
+                    if (modeSelect.value !== 'follow') {
+                        e.preventDefault();
+                        triggerVirtualKey(0, false, true);
+                    }
+                }, {passive:false});
+                div.addEventListener('mouseup', () => {
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
+                });
+                div.addEventListener('mouseleave', () => {
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
+                });
+                div.addEventListener('touchend', () => {
+                    if (modeSelect.value !== 'follow') releaseVirtualKey(0);
+                });
+            }
             keyboardRow.appendChild(div);
         }
         // 歌曲下拉框多语言
